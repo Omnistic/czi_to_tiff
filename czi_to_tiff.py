@@ -7,13 +7,31 @@ from bioio import BioImage
 
 TIFF_EXTENSIONS = (".tif", ".tiff")
 
+def extract_barcode(metadata):
+    barcode_element = metadata.find("Metadata/AttachmentInfos/AttachmentInfo/Label/Barcodes/Barcode/Content")
+
+    if barcode_element is None:
+        barcode = None
+    else:
+        barcode = barcode_element.text.split(" ")[-1]
+
+    return barcode
+
+def extract_timestamp(metadata):
+    timestamp_element = metadata.find("Metadata/Information/Image/AcquisitionDateAndTime")
+
+    if timestamp_element is None:
+        timestamp = None
+    else:
+        timestamp = timestamp_element.text
+
+    return timestamp
+
 def czi_to_tiff(czi_path, destination_folder):
     img = BioImage(czi_path)
-    
-    ET.ElementTree(img.metadata).write("E:/metadata.xml")
-    
-    print(img.metadata[0][7][0][0][0][0][0].tag)
-    print(img.metadata[0][7][0][0][0][0][0].text)
+
+    print(extract_barcode(img.metadata))
+    print(extract_timestamp(img.metadata))
 
     prefix = "Image_H(0)_"
 
@@ -27,7 +45,7 @@ def czi_to_tiff(czi_path, destination_folder):
             for z_slice in range(img.dims.Z):
                 for channel in range(img.dims.C):
                     filename = destination_folder + prefix + f"S{scene_id:04d}({scene})_T{time_point:06d}_Z{z_slice:04d}_C{channel:02d}_M0000_ORG.tif"
-                    # tiff.imwrite(filename, img.get_image_data("YX", T=time_point, Z=z_slice, C=channel))
+                    tiff.imwrite(filename, img.get_image_data("YX", T=time_point, Z=z_slice, C=channel))
 
 def tiffs_filenames_in_folder(folder):
     tiffs_filenames = []
